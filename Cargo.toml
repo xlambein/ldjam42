@@ -1,0 +1,8 @@
+[package]
+name = "ldjam42"
+version = "0.1.0"
+authors = ["Xavier Lambein <xlambein@gmail.com>"]
+
+[dependencies]
+ggez = "0.4"
+
