@@ -14,9 +14,15 @@ A space ship, capable of FTL (faster-than-light) travel, sent from Earth as the
 the edge of explored space, and try to find a way to escape our Universe to
 escape the Growth.  Space is running out, so you're running _out_ of Space.
 
+(You might note that this concept draws a lot of inspiration from a story in
+the podcast ["The Adventure
+Zone"](http://www.maximumfun.org/shows/adventure-zone).)
+
 This project is made in Rust with the [ggez](http://ggez.rs/) game engine.  I
 chose Rust because I am currently learning the language, and I thought it would
 be a fun way to practise.
+
+![Celestial mechanics](https://raw.githubusercontent.com/xlambein/ldjam42/master/gifs/01.gif)
 
 
 ## Gameplay
@@ -51,7 +57,7 @@ alert: I won't), or if I go back to work on this game later.
 
 ### Main Game
 
-- [ ] Solar system rendering and physics
+- [x] Solar system rendering and physics
 - [ ] Random system generation
 - [ ] Space ship rendering, control and basic physics
 - [ ] Landing onto planets
