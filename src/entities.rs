@@ -69,7 +69,7 @@ pub struct Spaceship {
     pub mass: f32,
 }
 
-const SPACESHIP_HEIGHT: f32 = 10.;
+const SPACESHIP_HEIGHT: f32 = 1.;
 
 impl Spaceship {
 
@@ -106,6 +106,24 @@ impl Spaceship {
             self.rot)?;
 
         Ok(())
+    }
+
+    pub fn new_in_orbit(sun: &CelestialBody, pos: Point2, clockwise: bool, mass: f32) -> Self {
+        let r = sun.pos - pos;
+        // Velocity is perpendicular to radial vector
+        let v = if clockwise {
+            Matrix2::new(0., 1., -1., 0.)
+        } else {
+            Matrix2::new(0., -1., 1., 0.)
+        } * r.normalize();
+        let vel = (G * sun.mass / r.norm()).sqrt() * v;
+
+        Spaceship {
+            pos,
+            vel,
+            rot: 0.,
+            mass,
+        }
     }
 
 }

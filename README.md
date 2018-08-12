@@ -22,7 +22,7 @@ This project is made in Rust with the [ggez](http://ggez.rs/) game engine.  I
 chose Rust because I am currently learning the language, and I thought it would
 be a fun way to practise.
 
-![Celestial mechanics](https://raw.githubusercontent.com/xlambein/ldjam42/master/gifs/02.gif)
+![Ship physics and controls](https://raw.githubusercontent.com/xlambein/ldjam42/master/gifs/03.gif)
 
 
 ## Gameplay
@@ -60,7 +60,7 @@ alert: I won't), or if I go back to work on this game later.
 - [x] Solar system rendering and physics
 - [x] Scaling for HDPI monitors
 - [x] Basic random system generation
-- [ ] Space ship rendering, control and basic physics
+- [x] Spaceship rendering, control and basic physics
 - [ ] Landing onto planets
 - [ ] Advanced random system generation
 - [ ] Resources UI

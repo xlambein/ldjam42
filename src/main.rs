@@ -92,6 +92,9 @@ struct MainState {
     bodies: Vec<CelestialBody>,
     player: Spaceship,
     camera: DrawParam,
+
+    mouse: Point2,
+    mouse_down: bool,
 }
 
 impl MainState {
@@ -117,14 +120,15 @@ impl MainState {
         for _ in 0..4 {
             bodies.push(random_gas_giant_planet(&sun));
         }
-        bodies.push(sun);
 
-        let player = Spaceship {
-            pos: Point2::new(250., 0.),
-            vel: Vector2::new(0., 0.),
-            rot: 0.,
-            mass: 1.,
-        };
+        let player = Spaceship::new_in_orbit(
+            &sun,
+            Point2::new(250., 0.),
+            true,
+            1.
+        );
+
+        bodies.push(sun);
 
         let camera = DrawParam {
             src: Rect::one(),
@@ -140,6 +144,8 @@ impl MainState {
             bodies,
             player,
             camera,
+            mouse: Point2::origin(),
+            mouse_down: false,
         };
         Ok(s)
     }
@@ -171,13 +177,19 @@ impl event::EventHandler for MainState {
                 body.update(seconds)?;
             }
 
+            let mouse_rel = self.mouse - Point2::new(400., 300.);
+            let angle = Real::atan2(mouse_rel.y, mouse_rel.x);
+            self.player.rot = angle;
+
+            if self.mouse_down {
+                let ACC: f32 = 100.;
+                self.player.vel += seconds * ACC * Vector2::new(angle.cos(), angle.sin());
+            }
+
             self.player.update(seconds)?;
 
-            //self.camera.dest = -self.player.pos + Vector2::new(400., 300.);
-            //let pos = Point2::new(-400., 0.);
-            let pos = self.player.pos;
-            self.camera.dest = -pos + Vector2::new(400., 300.);
-            self.camera.offset = pos;
+            self.camera.dest = -self.player.pos + Vector2::new(400., 300.);
+            self.camera.offset = self.player.pos;
         }
 
         Ok(())
@@ -202,12 +214,12 @@ impl event::EventHandler for MainState {
     }
 
     fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
-        //self.mouse_down = true;
+        self.mouse_down = true;
         println!("Mouse button pressed: {:?}, x: {}, y: {}", button, x, y);
     }
 
     fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
-        //self.mouse_down = false;
+        self.mouse_down = false;
         println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
     }
 
@@ -220,7 +232,8 @@ impl event::EventHandler for MainState {
         xrel: i32,
         yrel: i32,
     ) {
-        let (_x, _y) = mouse_to_screen_coordinates(ctx, x, y);
+        let (x, y) = mouse_to_screen_coordinates(ctx, x, y);
+        self.mouse = Point2::new(x, y);
 
         println!(
             "Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}",
