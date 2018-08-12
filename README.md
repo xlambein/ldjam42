@@ -22,7 +22,7 @@ This project is made in Rust with the [ggez](http://ggez.rs/) game engine.  I
 chose Rust because I am currently learning the language, and I thought it would
 be a fun way to practise.
 
-![Celestial mechanics](https://raw.githubusercontent.com/xlambein/ldjam42/master/gifs/01.gif)
+![Celestial mechanics](https://raw.githubusercontent.com/xlambein/ldjam42/master/gifs/02.gif)
 
 
 ## Gameplay
