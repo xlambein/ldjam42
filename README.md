@@ -58,13 +58,15 @@ alert: I won't), or if I go back to work on this game later.
 ### Main Game
 
 - [x] Solar system rendering and physics
-- [ ] Scaling for HDPI monitors
-- [ ] Random system generation
+- [x] Scaling for HDPI monitors
+- [x] Basic random system generation
 - [ ] Space ship rendering, control and basic physics
 - [ ] Landing onto planets
+- [ ] Advanced random system generation
 - [ ] Resources UI
 - [ ] Collecting resources
 - [ ] Growth rendering and physics
+- [ ] Better config file
 
 ### FTL Jump Screen
 

@@ -176,7 +176,7 @@ impl MainState {
             dest: Point2::origin(),
             rotation: 0.0,
             scale: Point2::new(1.0, 1.0),
-            offset: Point2::new(0.5, 0.5),
+            offset: Point2::new(0., 0.),
             shear: Point2::new(0.0, 0.0),
             color: None,
         };
@@ -187,6 +187,12 @@ impl MainState {
         };
         Ok(s)
     }
+}
+
+fn mouse_to_screen_coordinates(ctx: &Context, x: i32, y: i32) -> (f32, f32) {
+    let (w, h) = graphics::get_size(ctx);
+    let screen = graphics::get_screen_coordinates(ctx);
+    (screen.x + (x as f32 / w as f32) * screen.w, screen.y + (y as f32 / h as f32) * screen.h)
 }
 
 impl event::EventHandler for MainState {
@@ -238,16 +244,15 @@ impl event::EventHandler for MainState {
 
     fn mouse_motion_event(
         &mut self,
-        _ctx: &mut Context,
+        ctx: &mut Context,
         _state: MouseState,
         x: i32,
         y: i32,
         xrel: i32,
         yrel: i32,
     ) {
-        //let (w, h) = graphics::get_size(ctx);
-        //self.camera.dest = Point2::new((x - w as i32/2) as f32, (y - h as i32/2) as f32);
-        self.camera.dest = Point2::new(x as f32, y as f32);
+        let (x, y) = mouse_to_screen_coordinates(ctx, x, y);
+        self.camera.dest = Point2::new(x, y);
 
         println!(
             "Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}",
@@ -282,11 +287,23 @@ impl event::EventHandler for MainState {
 
 use std::fs::File;
 
+const SCALING_FACTOR: f32 = 2.;
+
 pub fn main() {
+    // TODO handle errors
     let mut config_file = File::open("config.toml").unwrap();
     let c = conf::Conf::from_toml_file(&mut config_file).unwrap();
     let ctx = &mut Context::load_from_conf("super_simple", "ggez", c).unwrap();
     let state = &mut MainState::new(ctx).unwrap();
+
+    // High-DPI stuff
+    // TODO pull that into a config file
+    
+    let (w, h) = graphics::get_size(ctx);
+    graphics::set_resolution(ctx,
+                             (SCALING_FACTOR * w as f32) as u32,
+                             (SCALING_FACTOR * h as f32) as u32).unwrap();
+
     event::run(ctx, state).unwrap();
 }
 
