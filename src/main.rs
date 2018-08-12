@@ -2,75 +2,17 @@ extern crate ggez;
 extern crate nalgebra;
 use ggez::*;
 use ggez::event::{self, Keycode, Mod, MouseButton, MouseState};
-use ggez::graphics::{DrawMode, DrawParam, Rect, Color, Point2, Vector2};
+use ggez::graphics::{DrawMode, DrawParam, Mesh, MeshBuilder, Rect, Color, Point2, Vector2};
 use nalgebra::{Real};
-
-type Matrix2 = nalgebra::Matrix2<f32>;
 
 extern crate rand;
 use rand::prelude::*;
 
 extern crate hsluv;
 
-const G: f32 = 1.;
+mod entities;
 
-struct CelestialBody {
-    pub pos: Point2,
-    pub vel: Vector2,
-    pub rad: f32,
-    pub mass: f32,
-    pub color: Color,
-}
-
-impl CelestialBody {
-    fn apply_gravity(&mut self, other: &CelestialBody, seconds: f32) {
-        let r = other.pos - self.pos;
-        // Newton's formula for gravity
-        // The body's own mass isn't in here, because we want the acceleration and not the force
-        let acc = G * other.mass / r.norm_squared() * r.normalize();
-        self.vel += seconds * acc;
-    }
-
-    fn update(&mut self, seconds: f32) -> GameResult<()> {
-        self.pos += self.vel * seconds;
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::set_color(ctx, self.color)?;
-        graphics::circle(
-            ctx,
-            DrawMode::Fill,
-            self.pos,
-            self.rad, 1.0)?;
-        Ok(())
-    }
-
-    // Create a planet orbitting a star at a given location
-    fn planet(sun: &CelestialBody, pos: Point2, clockwise: bool, rad: f32, mass: f32, color: Color) -> Self {
-        let r = sun.pos - pos;
-        // Velocity is perpendicular to radial vector
-        let v = if clockwise {
-            Matrix2::new(0., 1., -1., 0.)
-        } else {
-            Matrix2::new(0., -1., 1., 0.)
-        } * r.normalize();
-        let vel = (G * sun.mass / r.norm()).sqrt() * v;
-
-        CelestialBody {
-            pos,
-            vel,
-            rad,
-            mass,
-            color,
-        }
-    }
-}
-
-struct MainState {
-    bodies: Vec<CelestialBody>,
-    camera: DrawParam,
-}
+use entities::{CelestialBody, Spaceship};
 
 const STAR_RADIUS_RANGE: [f32; 2] = [100., 200.];
 const STAR_DENSITY_RANGE: [f32; 2] = [0.01, 0.05];
@@ -146,6 +88,12 @@ fn random_gas_giant_planet(sun: &CelestialBody) -> CelestialBody {
     CelestialBody::planet(sun, pos, clockwise, rad, mass, color)
 }
 
+struct MainState {
+    bodies: Vec<CelestialBody>,
+    player: Spaceship,
+    camera: DrawParam,
+}
+
 impl MainState {
     fn new(_ctx: &mut Context) -> GameResult<MainState> {
         let sun = random_star();
@@ -171,6 +119,13 @@ impl MainState {
         }
         bodies.push(sun);
 
+        let player = Spaceship {
+            pos: Point2::new(250., 0.),
+            vel: Vector2::new(0., 0.),
+            rot: 0.,
+            mass: 1.,
+        };
+
         let camera = DrawParam {
             src: Rect::one(),
             dest: Point2::origin(),
@@ -183,6 +138,7 @@ impl MainState {
 
         let s = MainState {
             bodies,
+            player,
             camera,
         };
         Ok(s)
@@ -209,8 +165,19 @@ impl event::EventHandler for MainState {
                     body.apply_gravity(other, seconds);
                     other.apply_gravity(body, seconds);
                 }
+
+                self.player.apply_gravity(body, seconds);
+
                 body.update(seconds)?;
             }
+
+            self.player.update(seconds)?;
+
+            //self.camera.dest = -self.player.pos + Vector2::new(400., 300.);
+            //let pos = Point2::new(-400., 0.);
+            let pos = self.player.pos;
+            self.camera.dest = -pos + Vector2::new(400., 300.);
+            self.camera.offset = pos;
         }
 
         Ok(())
@@ -225,6 +192,8 @@ impl event::EventHandler for MainState {
         for body in &mut self.bodies {
             body.draw(ctx)?;
         }
+
+        self.player.draw(ctx)?;
 
         graphics::present(ctx);
 
@@ -251,8 +220,7 @@ impl event::EventHandler for MainState {
         xrel: i32,
         yrel: i32,
     ) {
-        let (x, y) = mouse_to_screen_coordinates(ctx, x, y);
-        self.camera.dest = Point2::new(x, y);
+        let (_x, _y) = mouse_to_screen_coordinates(ctx, x, y);
 
         println!(
             "Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}",
