@@ -6,4 +6,5 @@ authors = ["Xavier Lambein <xlambein@gmail.com>"]
 [dependencies]
 ggez = "0.4"
 nalgebra = "0.14"
-
+rand = "0.5"
+hsluv = "0.1.0"
