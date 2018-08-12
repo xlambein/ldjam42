@@ -61,11 +61,12 @@ alert: I won't), or if I go back to work on this game later.
 - [x] Scaling for HDPI monitors
 - [x] Basic random system generation
 - [x] Spaceship rendering, control and basic physics
+- [ ] Trajectory indicator
 - [ ] Landing onto planets
-- [ ] Advanced random system generation
 - [ ] Resources UI
 - [ ] Collecting resources
 - [ ] Growth rendering and physics
+- [ ] Advanced random system generation
 - [ ] Better config file
 
 ### FTL Jump Screen

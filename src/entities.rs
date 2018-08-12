@@ -7,17 +7,16 @@ type Matrix2 = nalgebra::Matrix2<f32>;
 
 const G: f32 = 1.;
 
-pub struct CelestialBody {
+pub struct Body {
+    // TODO add forces
     pub pos: Point2,
     pub vel: Vector2,
-    pub rad: f32,
     pub mass: f32,
-    pub color: Color,
 }
 
-impl CelestialBody {
+impl Body {
 
-    pub fn apply_gravity(&mut self, other: &CelestialBody, seconds: f32) {
+    pub fn apply_gravity(&mut self, other: &Body, seconds: f32) {
         let r = other.pos - self.pos;
         // Newton's formula for gravity
         // The body's own mass isn't in here, because we want the acceleration and not the force
@@ -27,6 +26,39 @@ impl CelestialBody {
 
     pub fn update(&mut self, seconds: f32) -> GameResult<()> {
         self.pos += self.vel * seconds;
+        Ok(())
+    }
+
+    pub fn new(pos: Point2, vel: Vector2, mass: f32) -> Self {
+        Body { pos, vel, mass }
+    }
+
+    pub fn new_in_orbit(parent: &Body, pos: Point2, clockwise: bool, mass: f32) -> Self {
+        let r = parent.pos - pos;
+        // Velocity is perpendicular to radial vector
+        let v = if clockwise {
+            Matrix2::new(0., 1., -1., 0.)
+        } else {
+            Matrix2::new(0., -1., 1., 0.)
+        } * r.normalize();
+        let vel = (G * parent.mass / r.norm()).sqrt() * v;
+
+        Body::new(pos, vel, mass)
+    }
+
+}
+
+pub struct CelestialObject {
+    pub body: Body,
+    pub rad: f32,
+    pub color: Color,
+}
+
+impl CelestialObject {
+
+    pub fn update(&mut self, seconds: f32) -> GameResult<()> {
+        self.body.update(seconds)?;
+
         Ok(())
     }
 
@@ -35,27 +67,23 @@ impl CelestialBody {
         graphics::circle(
             ctx,
             DrawMode::Fill,
-            self.pos,
+            self.body.pos,
             self.rad, 1.0)?;
         Ok(())
     }
 
     // Create a planet orbitting a star at a given location
-    pub fn planet(sun: &CelestialBody, pos: Point2, clockwise: bool, rad: f32, mass: f32, color: Color) -> Self {
-        let r = sun.pos - pos;
-        // Velocity is perpendicular to radial vector
-        let v = if clockwise {
-            Matrix2::new(0., 1., -1., 0.)
-        } else {
-            Matrix2::new(0., -1., 1., 0.)
-        } * r.normalize();
-        let vel = (G * sun.mass / r.norm()).sqrt() * v;
-
-        CelestialBody {
-            pos,
-            vel,
+    pub fn new_planet_in_orbit(
+        sun: &CelestialObject,
+        pos: Point2,
+        clockwise: bool,
+        rad: f32,
+        mass: f32,
+        color: Color
+    ) -> Self {
+        CelestialObject {
+            body: Body::new_in_orbit(&sun.body, pos, clockwise, mass),
             rad,
-            mass,
             color,
         }
     }
@@ -63,26 +91,17 @@ impl CelestialBody {
 }
 
 pub struct Spaceship {
-    pub pos: Point2,
-    pub vel: Vector2,
+    pub body: Body,
     pub rot: f32,
-    pub mass: f32,
 }
 
 const SPACESHIP_HEIGHT: f32 = 1.;
 
 impl Spaceship {
 
-    pub fn apply_gravity(&mut self, other: &CelestialBody, seconds: f32) {
-        let r = other.pos - self.pos;
-        // Newton's formula for gravity
-        // The body's own mass isn't in here, because we want the acceleration and not the force
-        let acc = G * other.mass / r.norm_squared() * r.normalize();
-        self.vel += seconds * acc;
-    }
-
     pub fn update(&mut self, seconds: f32) -> GameResult<()> {
-        self.pos += self.vel * seconds;
+        self.body.update(seconds)?;
+
         Ok(())
     }
 
@@ -102,7 +121,7 @@ impl Spaceship {
         graphics::draw(
             ctx,
             &mesh,
-            self.pos,
+            self.body.pos,
             self.rot)?;
 
         Ok(())
@@ -133,22 +152,15 @@ impl Spaceship {
         Ok(())
     }
 
-
-    pub fn new_in_orbit(sun: &CelestialBody, pos: Point2, clockwise: bool, mass: f32) -> Self {
-        let r = sun.pos - pos;
-        // Velocity is perpendicular to radial vector
-        let v = if clockwise {
-            Matrix2::new(0., 1., -1., 0.)
-        } else {
-            Matrix2::new(0., -1., 1., 0.)
-        } * r.normalize();
-        let vel = (G * sun.mass / r.norm()).sqrt() * v;
-
+    pub fn new_in_orbit(
+        sun: &CelestialObject,
+        pos: Point2,
+        clockwise: bool,
+        mass: f32
+    ) -> Self {
         Spaceship {
-            pos,
-            vel,
+            body: Body::new_in_orbit(&sun.body, pos, clockwise, mass),
             rot: 0.,
-            mass,
         }
     }
 
