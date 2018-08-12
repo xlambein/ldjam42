@@ -1,7 +1,7 @@
 extern crate ggez;
 extern crate nalgebra;
 use ggez::*;
-use ggez::graphics::{DrawMode, Mesh, Color, Point2, Vector2};
+use ggez::graphics::{DrawMode, Mesh, Rect, Color, Point2, Vector2};
 
 type Matrix2 = nalgebra::Matrix2<f32>;
 
@@ -107,6 +107,32 @@ impl Spaceship {
 
         Ok(())
     }
+
+    pub fn draw_ui(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let height = 10.;
+        let mesh = Mesh::new_polygon(
+            ctx,
+            DrawMode::Fill,
+            &[
+                Point2::new(-height/3., -height/2.),
+                Point2::new(2.*height/3., 0.),
+                Point2::new(-height/3., height/2.),
+                Point2::new(-height/3., -height/2.)
+            ]
+        )?;
+
+        let Rect { x, y, w, h } = graphics::get_screen_coordinates(ctx);
+
+        graphics::set_color(ctx, [0.5, 0.6, 0.7, 0.7].into())?;
+        graphics::draw(
+            ctx,
+            &mesh,
+            Point2::new(x + w/2., y + h/2.),
+            self.rot)?;
+
+        Ok(())
+    }
+
 
     pub fn new_in_orbit(sun: &CelestialBody, pos: Point2, clockwise: bool, mass: f32) -> Self {
         let r = sun.pos - pos;

@@ -182,7 +182,7 @@ impl event::EventHandler for MainState {
             self.player.rot = angle;
 
             if self.mouse_down {
-                let ACC: f32 = 100.;
+                let ACC: f32 = 10.;
                 self.player.vel += seconds * ACC * Vector2::new(angle.cos(), angle.sin());
             }
 
@@ -206,6 +206,11 @@ impl event::EventHandler for MainState {
         }
 
         self.player.draw(ctx)?;
+
+        graphics::pop_transform(ctx);
+        graphics::apply_transformations(ctx)?;
+
+        self.player.draw_ui(ctx)?;
 
         graphics::present(ctx);
 
