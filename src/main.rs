@@ -5,7 +5,7 @@ extern crate hsluv;
 
 use ggez::*;
 use ggez::event::{self, Keycode, Mod, MouseButton, MouseState};
-use ggez::graphics::{DrawParam, Rect, Point2, Vector2};
+use ggez::graphics::{DrawParam, DrawMode, Mesh, Rect, Point2, Vector2, Matrix4};
 use nalgebra::{Real};
 
 use std::fs::File;
@@ -13,9 +13,41 @@ use std::fs::File;
 mod entities;
 mod star_system_gen;
 
-use entities::{CelestialObject, Spaceship};
+use entities::{G, CelestialObject, Spaceship};
 use star_system_gen::*;
 
+
+struct Orbit {
+    pub body_center: Point2,
+    pub e: Vector2,
+    pub p: f32,
+}
+
+impl Orbit {
+
+    fn new(body_center: Point2, e: Vector2, p: f32) -> Self {
+        Orbit { body_center, e, p }
+    }
+
+    fn ellipse_axes(&self) -> Option<(f32, f32)> {
+        let e2 = self.e.norm_squared();
+        if e2 < 1. {
+            let a = self.p / (1. - e2);
+            let b = a * (1. - e2).sqrt();
+            Some((a, b))
+        } else {
+            None
+        }
+    }
+
+}
+
+impl Default for Orbit {
+
+    fn default() -> Self {
+        Orbit::new(Point2::origin(), Vector2::x(), 0.)
+    }
+}
 
 struct MainState {
     bodies: Vec<CelestialObject>,
@@ -24,6 +56,8 @@ struct MainState {
 
     mouse: Point2,
     mouse_down: bool,
+
+    orbit: Orbit,
 }
 
 impl MainState {
@@ -31,6 +65,7 @@ impl MainState {
         let sun = random_star();
 
         let mut bodies = vec![];
+
         for _ in 0..4 {
             bodies.push(random_rocky_planet(&sun));
         }
@@ -63,6 +98,7 @@ impl MainState {
             camera,
             mouse: Point2::origin(),
             mouse_down: false,
+            orbit: Orbit::default(),
         };
         Ok(s)
     }
@@ -94,6 +130,23 @@ impl event::EventHandler for MainState {
                 object.update(seconds)?;
             }
 
+            let mut min_rad = std::f32::INFINITY;
+            self.orbit = Orbit::default();
+            for object in self.bodies.iter() {
+                let body = &object.body;
+                let player = &self.player.body;
+                let r = player.pos - body.pos;
+                let v = player.vel - body.vel;
+                let h = r.perp(&v);
+                let mu = G * body.mass;
+                let e = Vector2::new(v.y * h, -v.x * h) / mu - r.normalize();
+
+                if e.norm() < 1. && r.norm() < min_rad {
+                    min_rad = r.norm();
+                    self.orbit = Orbit::new(body.pos, e, h*h / mu);
+                }
+            }
+
             let mouse_rel = self.mouse - Point2::new(400., 300.);
             let angle = Real::atan2(mouse_rel.y, mouse_rel.x);
             self.player.rot = angle;
@@ -117,7 +170,46 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::push_transform(ctx, Some(self.camera.into_matrix()));
+        //graphics::push_transform(ctx, Some(Matrix4::new_scaling(self.camera.scale.x)));
+        //graphics::push_transform(ctx, None);
         graphics::apply_transformations(ctx)?;
+
+        let scale = self.camera.scale.x;
+        let inv_scale = Point2::new(1./scale, 1./scale);
+
+        if let Some((a, b)) = self.orbit.ellipse_axes() {
+            let c = (a*a - b*b).sqrt();
+            let center = self.orbit.body_center - self.orbit.e.normalize() * c;
+
+            graphics::set_color(ctx, [1.0, 0.0, 0.0, 1.].into())?;
+
+            let ellipse = Mesh::new_ellipse(
+                ctx,
+                DrawMode::Line(2.),
+                Point2::origin(),
+                a*scale, b*scale,
+                1.)?;
+
+            // TODO idk why this works
+            let angle = if self.orbit.e.y >= 0. {
+                self.orbit.e.angle(&Vector2::x())
+            } else {
+                f32::pi() - self.orbit.e.angle(&Vector2::x())
+            };
+
+            graphics::draw_ex(
+                ctx,
+                &ellipse,
+                DrawParam {
+                    dest: center,
+                    rotation: angle,
+                    scale: inv_scale,
+                    ..Default::default()
+                })?;
+        };
+
+        //graphics::pop_transform(ctx);
+        //graphics::apply_transformations(ctx)?;
 
         for body in &mut self.bodies {
             body.draw(ctx)?;

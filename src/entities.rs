@@ -5,7 +5,7 @@ use ggez::graphics::{DrawMode, Mesh, Rect, Color, Point2, Vector2};
 
 type Matrix2 = nalgebra::Matrix2<f32>;
 
-const G: f32 = 1.;
+pub const G: f32 = 1.;
 
 pub struct Body {
     // TODO add forces
